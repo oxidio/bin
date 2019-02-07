@@ -1,0 +1,12 @@
+{
+  "type": "library",
+  "name": "oxidio/bin",
+  "description": "bash scripts for oxid environments",
+  "license": "MIT",
+  "bin": [
+    "bin/env"
+  ],
+  "config": {
+    "bin-dir": "vendor/bin/oxidio"
+  }
+}

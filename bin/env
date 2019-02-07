@@ -1,0 +1,24 @@
+#!/usr/bin/env bash
+
+function main() {
+    local base=$(dirname "$0")/..
+
+    [[ -f ${base}/.env ]] || {
+        echo "create .env file"
+        local var value vars
+        declare -A vars=(
+            ['DB_HOST']='db host'
+            ['DB_NAME']='db name'
+            ['DB_USER']='db user'
+            ['DB_PASSWORD']='db password'
+            ['SHOP_URL']='shop url'
+        )
+        for var in "${!vars[@]}"; do
+            read -p "${vars[$var]} (${!var}): " value
+            value=${value:-${!var}}
+            echo "${var}=${value}" >> ${base}/.env
+        done
+    }
+}
+
+main
