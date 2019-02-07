@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 
 function main() {
-    local base=$(dirname "$0")/..
+    local base
+    [[ $1 ]] && base=$1 || base=${PWD}
 
     [[ -f ${base}/.env ]] || {
         echo "create .env file"
@@ -21,4 +22,4 @@ function main() {
     }
 }
 
-main
+main $@

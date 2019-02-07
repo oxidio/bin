@@ -4,9 +4,6 @@
   "description": "bash scripts for oxid environments",
   "license": "MIT",
   "bin": [
-    "bin/env"
-  ],
-  "config": {
-    "bin-dir": "vendor/bin/oxidio"
-  }
+    "bin/oxidio-env"
+  ]
 }
