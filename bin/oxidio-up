@@ -1,0 +1,25 @@
+#!/usr/bin/env bash
+
+function main() {
+	local base=${PWD} link candidate relative
+
+	local up=${base}/vendor/bin/xampp-up
+	[[ -x ${up} ]] || up=xampp-up
+
+	# mount directories' symbolic links which are outside of the base directory as volumes to the container
+	for link in $(find ${base} -type l); do
+		candidate=$(readlink -f ${link})
+		[[ -d ${candidate} ]] && [[  ${candidate} != ${base}/* ]] && {
+			relative=${link:${#base}+1:100}
+			volumes="${volumes} --volume ${candidate}:/app/${relative}"
+		}
+	done;
+
+    ${up} \
+        --env WEB_DOCUMENT_ROOT="/app/source"  \
+        --env XDEBUG_PROFILER_ENABLE_TRIGGER="1"  \
+        --env XDEBUG_PROFILER_OUTPUT_DIR="/app/source/tmp" \
+        ${volumes}
+}
+
+main
