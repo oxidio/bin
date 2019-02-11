@@ -1,0 +1,51 @@
+#!/usr/bin/env bash
+
+function main() {
+    local base=${PWD}
+
+    echo "remove public directory"
+    rm -rf ${base}/source
+
+    echo 'install composer packages'
+    composer install --no-plugins --no-scripts $@
+    composer install $@
+
+    echo "link resources in public directory"
+    declare -A links=(
+        ['../../resources/data/downloads']='out/downloads'
+        ['../../../resources/data/pictures/master']='out/pictures/master'
+        ['../../../resources/data/pictures/media']='out/pictures/media'
+        ['../../../resources/data/pictures/promo']='out/pictures/promo'
+        ['../../../resources/data/pictures/vendor']='out/pictures/vendor'
+        ['../../resources/migration']='migration/project_data'
+    )
+    for link in "${!links[@]}"; do
+        link ${base}/source/${links[$link]} ${link}
+    done
+
+    rm -rf ${base}/source/Setup
+
+    cat <<EOF > ${base}/source/config.inc.php
+<?php
+
+call_user_func(function(...\$file) {
+    /** @noinspection PhpIncludeInspection */
+    file_exists(\$file) && include \$file;
+},
+    __DIR__. '/config.inc.php.dist',
+        dirname(__DIR__) . '/config/config.php'
+);
+EOF
+    chmod 444 ${base}/source/config.inc.php
+}
+
+function link() {
+    [[ -d $1/../$2 ]] && {
+	    echo "$1  ->  $2"
+		mkdir -p $1 2>/dev/null
+		rm -rf $1
+		ln -sf $2 $1
+    }
+}
+
+main
