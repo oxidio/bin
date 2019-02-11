@@ -5,6 +5,7 @@
   "license": "MIT",
   "bin": [
     "bin/oxidio-env",
+    "bin/oxidio-install",
     "bin/oxidio-up"
   ]
 }
