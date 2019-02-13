@@ -28,12 +28,14 @@ function main() {
     cat <<EOF > ${base}/source/config.inc.php
 <?php
 
-call_user_func(function(...\$file) {
+call_user_func(function(...\$files) {
     /** @noinspection PhpIncludeInspection */
-    file_exists(\$file) && include \$file;
+    foreach(\$files as \$file) {
+        file_exists(\$file) && include \$file;
+    }
 },
     __DIR__. '/config.inc.php.dist',
-        dirname(__DIR__) . '/config/config.php'
+    dirname(__DIR__) . '/config/config.php'
 );
 EOF
     chmod 444 ${base}/source/config.inc.php

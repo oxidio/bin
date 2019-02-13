@@ -4,6 +4,8 @@
   "description": "bash scripts for oxid environments",
   "license": "MIT",
   "bin": [
+    "bin/oxidio-db",
+    "bin/oxidio-dump",
     "bin/oxidio-env",
     "bin/oxidio-install",
     "bin/oxidio-up"
