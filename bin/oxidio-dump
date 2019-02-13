@@ -1,0 +1,28 @@
+#!/usr/bin/env bash
+
+function main() {
+    local base=$(dirname "$0")/..
+    [[ -f ${base}/.env ]] && . ${base}/.env
+
+	local like=${1-%}; shift
+	local dst=${1-${base}/resources/db/${DB_NAME}}; shift
+
+	mkdir -p ${dst}
+    local table
+    local sql=$(cat << EOT
+	SELECT DISTINCT TABLE_NAME
+	FROM INFORMATION_SCHEMA.TABLES
+	WHERE
+		TABLE_TYPE = 'BASE TABLE' AND
+		TABLE_SCHEMA=database() AND
+		TABLE_NAME LIKE '${like}'
+EOT
+)
+
+    for table in $(2>/dev/null mysql -NBA -h${DB_HOST} -u${DB_USER} -p${DB_PASSWORD} -D ${DB_NAME} -e "$sql")
+    do
+        echo "DUMPING TABLE: ${DB_NAME}.${table} to ${dst}/${table}.sql"
+        2>/dev/null mysqldump $@ -h${DB_HOST} -u${DB_USER} -p${DB_PASSWORD} ${DB_NAME} ${table} > ${dst}/${table}.sql
+    done
+}
+main $@

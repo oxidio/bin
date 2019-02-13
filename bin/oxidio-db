@@ -1,0 +1,20 @@
+#!/usr/bin/env bash
+
+function main() {
+    local base=$(dirname "$0")/..
+    [[ -f ${base}/.env ]] && . ${base}/.env
+
+    [[ -z $(mysql -h${DB_HOST} -u${DB_USER} -p${DB_PASSWORD} --skip-column-names -e "SHOW DATABASES LIKE '${DB_NAME}'") ]] && {
+        echo "create database \`${DB_NAME}\`"
+        mysql -h${DB_HOST} -u${DB_USER} -p${DB_PASSWORD} -e "CREATE DATABASE IF NOT EXISTS \`${DB_NAME}\`"
+    }
+
+	[[ -z $1 ]] || {
+        echo "import data to \`${DB_NAME}\`"
+        cat $@ | mysql -BA -h${DB_HOST} -u${DB_USER} -p${DB_PASSWORD} ${DB_NAME}
+	}
+
+    mysql -h${DB_HOST} -u${DB_USER} -p${DB_PASSWORD} ${DB_NAME}
+}
+
+main $@
