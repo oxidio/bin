@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 function main() {
-    local base=$(dirname "$0")/..
+    local base=${PWD}
     [[ -f ${base}/.env ]] && . ${base}/.env
 
 	local like=${1-%}; shift

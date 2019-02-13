@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 function main() {
-    local base=$(dirname "$0")/..
+    local base=${PWD}
     [[ -f ${base}/.env ]] && . ${base}/.env
 
     [[ -z $(mysql -h${DB_HOST} -u${DB_USER} -p${DB_PASSWORD} --skip-column-names -e "SHOW DATABASES LIKE '${DB_NAME}'") ]] && {
