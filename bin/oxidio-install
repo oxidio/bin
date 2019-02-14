@@ -28,15 +28,30 @@ function main() {
     cat <<EOF > ${base}/source/config.inc.php
 <?php
 
-call_user_func(function(...\$files) {
-    /** @noinspection PhpIncludeInspection */
-    foreach(\$files as \$file) {
-        file_exists(\$file) && include \$file;
+call_user_func(function () {
+    require __DIR__ . '/../vendor/autoload.php';
+    require __DIR__ . '/config.inc.php.dist';
+    if (class_exists(\Dotenv\Dotenv::class)) {
+        \Dotenv\Dotenv::create(INSTALLATION_ROOT_PATH)->overload();
     }
-},
-    __DIR__. '/config.inc.php.dist',
-    dirname(__DIR__) . '/config/config.php'
-);
+
+    \$this->sShopDir    = OX_BASE_PATH;
+    \$this->sCompileDir = OX_BASE_PATH . 'tmp/';
+    \$this->dbHost      = getenv('DB_HOST') ?: 'localhost';
+    \$this->dbPort      = getenv('DB_PORT') ?: 3306;
+    \$this->dbName      = getenv('DB_NAME') ?: '<dbName>';
+    \$this->dbUser      = getenv('DB_USER') ?: '<dbUser>';
+    \$this->dbPwd       = getenv('DB_PASSWORD') ?: '<dbPwd>';
+    \$this->sShopURL    = getenv('SHOP_URL') ?: 'localhost';
+    \$this->sSSLShopURL = getenv('SHOP_URL') ?: 'localhost';
+    \$this->sAdminEmail = getenv('SHOP_ADMIN') ?: 'webmaster@localhost';
+    \$this->iDebug      = getenv('SHOP_DEBUG') ?: 0;
+
+    \$configFile = INSTALLATION_ROOT_PATH . (getenv('SHOP_CONFIG') ?:  '/config/shop.php');
+    /** @noinspection PhpIncludeInspection */
+    file_exists(\$configFile) && require \$configFile;
+});
+
 EOF
     chmod 444 ${base}/source/config.inc.php
 }
