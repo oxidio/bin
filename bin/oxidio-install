@@ -57,12 +57,10 @@ EOF
 }
 
 function link() {
-    [[ -d $1/../$2 ]] && {
-	    echo "$1  ->  $2"
-		mkdir -p $1 2>/dev/null
-		rm -rf $1
-		ln -sf $2 $1
-    }
+    echo "$1  ->  $2"
+    mkdir -p $1 2>/dev/null
+    rm -rf $1
+    ln -sf $2 $1
 }
 
 main
