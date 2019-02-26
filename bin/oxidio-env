@@ -12,6 +12,7 @@ function main() {
             ['DB_NAME']='db name'
             ['DB_USER']='db user'
             ['DB_PASSWORD']='db password'
+            ['DB_STATE']='db state (e.g. migration)'
             ['SHOP_URL']='shop url'
         )
         for var in "${!vars[@]}"; do

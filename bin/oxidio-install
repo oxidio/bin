@@ -2,28 +2,31 @@
 
 function main() {
     local base=${PWD}
+    local command=${1-install}; shift
+    [[ -f ${base}/.env ]] && . ${base}/.env
 
     echo "remove public directory"
     rm -rf ${base}/source
 
-    echo 'install composer packages'
-    composer install --no-plugins --no-scripts $@
+    echo "${command} composer packages"
+    composer ${command} --no-plugins --no-scripts $@
     composer install $@
 
     echo "link resources in public directory"
     declare -A links=(
-        ['../../resources/data/downloads']='out/downloads'
-        ['../../../resources/data/pictures/master']='out/pictures/master'
-        ['../../../resources/data/pictures/media']='out/pictures/media'
-        ['../../../resources/data/pictures/promo']='out/pictures/promo'
-        ['../../../resources/data/pictures/vendor']='out/pictures/vendor'
-        ['../../resources/migration']='migration/project_data'
+        ['out/downloads']='downloads'
+        ['out/pictures/master']='pictures/master'
+        ['out/pictures/media']='pictures/media'
+        ['out/pictures/promo']='pictures/promo'
+        ['out/pictures/vendor']='pictures/vendor'
+        ['migration/project_data']='migration'
     )
+
     for link in "${!links[@]}"; do
-        link ${base}/source/${links[$link]} ${link}
+        linkResource ${link} ${links[$link]}
     done
 
-    rm -rf ${base}/source/Setup
+    [[ -z ${DB_STATE} ]] || rm -rf ${base}/source/Setup
 
     cat <<EOF > ${base}/source/config.inc.php
 <?php
@@ -56,11 +59,17 @@ EOF
     chmod 444 ${base}/source/config.inc.php
 }
 
-function link() {
-    echo "$1  ->  $2"
-    mkdir -p $1 2>/dev/null
-    rm -rf $1
-    ln -sf $2 $1
+function linkResource() {
+    local base=${PWD} dst=${base}/source/${1} link=${SHOP_RESOURCES-resources/}${2}
+
+    if [[ -e ${base}/${link} ]]; then
+        local rel=${1//[^\/]}
+        rel=$(printf '../%.0s' $(seq 0 ${#rel}))
+		mkdir -p ${dst} 2>/dev/null
+		rm -rf ${dst}
+		ln -sf ${rel}${link} ${dst}
+        echo "${dst}  ->  ${rel}${link}"
+    fi
 }
 
-main
+main $@
