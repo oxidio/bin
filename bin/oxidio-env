@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# Copyright (C) oxidio. See LICENSE file for license details.
 
 function main() {
     local base
