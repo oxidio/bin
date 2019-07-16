@@ -2,20 +2,22 @@
 # Copyright (C) oxidio. See LICENSE file for license details.
 
 function main() {
-    local base=${PWD}
+    local base=${PWD} pass
     [[ -f ${base}/.env ]] && . ${base}/.env
+    [[ -z ${DB_PASSWORD} ]] || pass="-p${DB_PASSWORD}"
 
-    [[ -z $(mysql -h${DB_HOST} -u${DB_USER} -p${DB_PASSWORD} --skip-column-names -e "SHOW DATABASES LIKE '${DB_NAME}'") ]] && {
+
+    [[ -z $(mysql -h${DB_HOST} -u${DB_USER} ${pass} --skip-column-names -e "SHOW DATABASES LIKE '${DB_NAME}'") ]] && {
         echo "create database \`${DB_NAME}\`"
-        mysql -h${DB_HOST} -u${DB_USER} -p${DB_PASSWORD} -e "CREATE DATABASE IF NOT EXISTS \`${DB_NAME}\`"
+        mysql -h${DB_HOST} -u${DB_USER} ${pass} -e "CREATE DATABASE IF NOT EXISTS \`${DB_NAME}\`"
     }
 
 	[[ -z $1 ]] || {
         echo "import data to \`${DB_NAME}\`"
-        cat $@ | mysql -BA -h${DB_HOST} -u${DB_USER} -p${DB_PASSWORD} ${DB_NAME}
+        cat $@ | mysql -BA -h${DB_HOST} -u${DB_USER} ${pass} ${DB_NAME}
 	}
 
-    mysql -h${DB_HOST} -u${DB_USER} -p${DB_PASSWORD} ${DB_NAME}
+    mysql -h${DB_HOST} -u${DB_USER} ${pass} ${DB_NAME}
 }
 
 main $@
