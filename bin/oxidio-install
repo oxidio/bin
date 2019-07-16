@@ -10,7 +10,7 @@ function main() {
     rm -rf ${base}/source
 
     echo "${command} composer packages"
-    composer ${command} --no-plugins --no-scripts $@
+    composer ${command} --no-plugins $@
     composer install $@
 
     echo "link resources in public directory"
