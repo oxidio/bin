@@ -17,7 +17,9 @@ function main() {
         cat $@ | mysql -BA -h${DB_HOST} -u${DB_USER} ${pass} ${DB_NAME}
 	}
 
-    mysql -h${DB_HOST} -u${DB_USER} ${pass} ${DB_NAME}
+    [[ -z $1 ]] && {
+        mysql -h${DB_HOST} -u${DB_USER} ${pass} ${DB_NAME}
+    }
 }
 
 main $@
