@@ -12,5 +12,12 @@
     "bin/oxidio-env",
     "bin/oxidio-install",
     "bin/oxidio-up"
-  ]
+  ],
+  "minimum-stability": "dev",
+  "prefer-stable": true,
+  "extra": {
+    "branch-alias": {
+      "dev-master": "1.x-dev"
+    }
+  }
 }

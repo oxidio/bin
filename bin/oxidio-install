@@ -58,6 +58,7 @@ call_user_func(function () {
 
 EOF
     chmod 444 ${base}/source/config.inc.php
+    return 0;
 }
 
 function linkResource() {

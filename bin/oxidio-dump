@@ -25,5 +25,7 @@ EOT
         echo "DUMPING TABLE: ${DB_NAME}.${table} to ${dst}/${table}.sql"
         2>/dev/null mysqldump $@ -h${DB_HOST} -u${DB_USER} -p${DB_PASSWORD} ${DB_NAME} ${table} > ${dst}/${table}.sql
     done
+
+    return 0;
 }
 main $@
