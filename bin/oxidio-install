@@ -6,10 +6,10 @@ function main() {
     local command=${1-install}; shift
     [[ -f ${base}/.env ]] && . ${base}/.env
 
-    echo "remove public directory"
-    rm -rf ${base}/source
+    echo "remove run directories 'rm -rf ${base}/{source,var}'"
+    rm -rf ${base}/{source,var}
 
-    echo "${command} composer packages"
+    echo "${command} '$@' composer packages"
     composer ${command} --no-plugins $@
     composer install $@
 
@@ -31,33 +31,19 @@ function main() {
 
     cat <<EOF > ${base}/source/config.inc.php
 <?php
+/**
+ * Copyright (C) oxidio. See LICENSE file for license details.
+ */
 
 call_user_func(function () {
     require __DIR__ . '/../vendor/autoload.php';
     require __DIR__ . '/config.inc.php.dist';
-    if (class_exists(\Dotenv\Dotenv::class)) {
-        \Dotenv\Dotenv::create(INSTALLATION_ROOT_PATH)->overload();
-    }
-
-    \$this->sShopDir    = OX_BASE_PATH;
-    \$this->sCompileDir = OX_BASE_PATH . 'tmp/';
-    \$this->dbHost      = getenv('DB_HOST') ?: 'localhost';
-    \$this->dbPort      = getenv('DB_PORT') ?: 3306;
-    \$this->dbName      = getenv('DB_NAME') ?: '<dbName>';
-    \$this->dbUser      = getenv('DB_USER') ?: '<dbUser>';
-    \$this->dbPwd       = getenv('DB_PASSWORD') ?: '<dbPwd>';
-    \$this->sShopURL    = getenv('SHOP_URL') ?: 'localhost';
-    \$this->sSSLShopURL = getenv('SHOP_URL') ?: 'localhost';
-    \$this->sAdminEmail = getenv('SHOP_ADMIN') ?: 'webmaster@localhost';
-    \$this->iDebug      = getenv('SHOP_DEBUG') ?: 0;
-
-    \$configFile = INSTALLATION_ROOT_PATH . (getenv('SHOP_CONFIG') ?:  '/config/shop.php');
-    /** @noinspection PhpIncludeInspection */
-    file_exists(\$configFile) && require \$configFile;
+    /** @var OxidEsales\EshopCommunity\Core\Config|BootstrapConfigFileReader \$this */
+    class_exists(Oxidio\Bootstrap::class) && Oxidio\Bootstrap::bootstrap(\$this);
 });
 
 EOF
-    chmod 444 ${base}/source/config.inc.php
+    [[ -z ${DB_STATE} ]] || chmod 444 ${base}/source/config.inc.php
     return 0;
 }
 
