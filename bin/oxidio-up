@@ -2,9 +2,13 @@
 # Copyright (C) oxidio. See LICENSE file for license details.
 
 function main() {
+  local base=${PWD} env
+  [[ -f ${base}/.env ]] && . ${base}/.env
+  [[ -z ${SHOP_DEBUG} ]] || env='--env DOCKER_XAMPP_BIN_ENV=dev'
+
 	local up=${PWD}/vendor/bin/xampp-up
 	[[ -x ${up} ]] || up=xampp-up
-    ${up} --env WEB_DOCUMENT_ROOT="/app/source" $@
+    ${up} --env WEB_DOCUMENT_ROOT="/app/source" ${env} $@
     return 0;
 }
 
