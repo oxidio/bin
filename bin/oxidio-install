@@ -13,19 +13,13 @@ function main() {
     composer ${command} --no-plugins $@
     composer install $@
 
-    echo "link resources in public directory"
-    declare -A links=(
-        ['out/downloads']='downloads'
-        ['out/pictures/master']='pictures/master'
-        ['out/pictures/media']='pictures/media'
-        ['out/pictures/promo']='pictures/promo'
-        ['out/pictures/vendor']='pictures/vendor'
-        ['migration/project_data']='migration'
-    )
-
-    for link in "${!links[@]}"; do
-        linkResource ${link} ${links[$link]}
-    done
+    publicLinks \
+        resources/downloads:out/downloads \
+        resources/pictures/master:out/pictures/master \
+        resources/pictures/media:out/pictures/media \
+        resources/pictures/promo:out/pictures/promo \
+        resources/pictures/vendor:out/pictures/vendor \
+        resources/migration:migration/project_data
 
     [[ -z ${DB_STATE} ]] || rm -rf ${base}/source/Setup
 
@@ -47,17 +41,23 @@ EOF
     return 0;
 }
 
-function linkResource() {
-    local base=${PWD} dst=${base}/source/${1} link=${SHOP_RESOURCES-resources/}${2}
+function publicLinks() {
+    local line dst link rel base=${PWD}
+    echo "create links in the public (source) directory"
+    for line in $@; do
+        link=$(echo $line| cut -d: -f 1)
+        if [[ -e ${base}/${link} ]]; then
+            dst=$(echo $line| cut -d: -f 2)
+            rel=${dst//[^\/]}
+            rel=$(printf '../%.0s' $(seq 0 ${#rel}))
 
-    if [[ -e ${base}/${link} ]]; then
-        local rel=${1//[^\/]}
-        rel=$(printf '../%.0s' $(seq 0 ${#rel}))
-		mkdir -p ${dst} 2>/dev/null
-		rm -rf ${dst}
-		ln -sf ${rel}${link} ${dst}
-        echo "${dst}  ->  ${rel}${link}"
-    fi
+            mkdir -p ${base}/source/${dst} 2>/dev/null
+            rm -rf ${base}/source/${dst}
+            ln -sf ${rel}${link} ${base}/source/${dst}
+
+            echo "${base}/source/${dst}  ->  ${rel}${link}"
+        fi
+    done
 }
 
 main $@
