@@ -1,15 +1,16 @@
 #!/usr/bin/env bash
 # Copyright (C) oxidio. See LICENSE file for license details.
+# shellcheck source=.
 
 function main() {
-  local base=${PWD} env
-  [[ -f ${base}/.env ]] && . ${base}/.env
-  [[ -z ${SHOP_DEBUG} ]] || env='--env DOCKER_XAMPP_BIN_ENV=dev'
+    local base=${PWD} args
+    [[ -f "$base"/.env ]] && . "$base"/.env
+    [[ -z ${SHOP_DEBUG} ]] || args=(--env "DOCKER_XAMPP_BIN_ENV=dev")
 
 	local up=${PWD}/vendor/bin/xampp-up
 	[[ -x ${up} ]] || up=xampp-up
-    ${up} --env WEB_DOCUMENT_ROOT="/app/source" ${env} $@
+    $up --env WEB_DOCUMENT_ROOT="/app/source" "${args[@]}" "$@"
     return 0;
 }
 
-main $@
+main "$@"

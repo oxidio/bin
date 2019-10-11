@@ -1,29 +1,16 @@
 #!/usr/bin/env bash
 # Copyright (C) oxidio. See LICENSE file for license details.
+# shellcheck source=.
 
 function main() {
     local base=${PWD}
-    local command=${1-install}; shift
-    [[ -f ${base}/.env ]] && . ${base}/.env
+    [[ -f "$base"/.env ]] && . "$base"/.env
+    rm -rf "$base/source $base/var"
+    composer install "$@"
 
-    echo "remove run directories 'rm -rf ${base}/{source,var}'"
-    rm -rf ${base}/{source,var}
+    [[ -z ${DB_STATE} ]] || rm -rf "$base/source/Setup"
 
-    echo "${command} '$@' composer packages"
-    composer ${command} --no-plugins $@
-    composer install $@
-
-    publicLinks \
-        resources/downloads:out/downloads \
-        resources/pictures/master:out/pictures/master \
-        resources/pictures/media:out/pictures/media \
-        resources/pictures/promo:out/pictures/promo \
-        resources/pictures/vendor:out/pictures/vendor \
-        resources/migration:migration/project_data
-
-    [[ -z ${DB_STATE} ]] || rm -rf ${base}/source/Setup
-
-    cat <<EOF > ${base}/source/config.inc.php
+    cat <<EOF > "$base/source/config.inc.php"
 <?php
 /**
  * Copyright (C) oxidio. See LICENSE file for license details.
@@ -37,27 +24,24 @@ call_user_func(function () {
 });
 
 EOF
-    [[ -z ${DB_STATE} ]] || chmod 444 ${base}/source/config.inc.php
+    [[ -z ${DB_STATE} ]] || chmod 444 "$base"/source/config.inc.php
     return 0;
 }
 
 function publicLinks() {
     local line dst link rel base=${PWD}
-    echo "create links in the public (source) directory"
-    for line in $@; do
-        link=$(echo $line| cut -d: -f 1)
+    for line in "$@"; do
+        link=$(echo "$line"| cut -d: -f 1)
+        dst=$(echo "$line"| cut -d: -f 2)
         if [[ -e ${base}/${link} ]]; then
-            dst=$(echo $line| cut -d: -f 2)
             rel=${dst//[^\/]}
             rel=$(printf '../%.0s' $(seq 0 ${#rel}))
-
-            mkdir -p ${base}/source/${dst} 2>/dev/null
-            rm -rf ${base}/source/${dst}
-            ln -sf ${rel}${link} ${base}/source/${dst}
-
-            echo "${base}/source/${dst}  ->  ${rel}${link}"
+            mkdir -p "$base/source/$dst" 2>/dev/null
+            rm -rf "$base/source/$dst"
+            ln -sf "$rel$link" "$base/source/$dst"
+            echo "$base/source/$dst  ->  $rel$link"
         fi
     done
 }
 
-main $@
+main "$@"
