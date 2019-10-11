@@ -5,7 +5,7 @@
 function main() {
     local base=${PWD}
     [[ -f "$base"/.env ]] && . "$base"/.env
-    rm -rf "$base/source $base/var"
+    rm -rf "$base/source" "$base/var"
     composer install "$@"
 
     [[ -z ${DB_STATE} ]] || rm -rf "$base/source/Setup"
