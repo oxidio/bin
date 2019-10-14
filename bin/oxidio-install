@@ -5,10 +5,10 @@
 function main() {
     local base=${PWD}
     [[ -f "$base"/.env ]] && . "$base"/.env
+    [[ -x ${base}/vendor/bin/oxidio-install ]] || composer install --no-plugins --no-scripts "$@"
     rm -rf "$base/source" "$base/var"
-    composer install "$@"
 
-    [[ -z ${DB_STATE} ]] || rm -rf "$base/source/Setup"
+    composer install "$@"
 
     cat <<EOF > "$base/source/config.inc.php"
 <?php
@@ -25,6 +25,43 @@ call_user_func(function () {
 
 EOF
     [[ -z ${DB_STATE} ]] || chmod 444 "$base"/source/config.inc.php
+    [[ -z ${DB_STATE} ]] || rm -rf "$base/source/Setup"
+
+    local shop=${SHOP_URL##http*/}
+    local theme=${SHOP_THEME:-flow}
+    local rShared=${SHOP_RESOURCES_SHARED:-resources/shared}
+    local rLocal=${SHOP_RESOURCES_LOCAL:-resources/local}
+    local rTheme=${SHOP_RESOURCES_THEME:-resources/shared/theme}
+
+    echo -e "\e[92mcreate links: \e[44m shared assets \e[0m"
+    publicLinks \
+        "$rShared"/downloads:out/downloads \
+        "$rShared"/pictures/master:out/pictures/master \
+        "$rShared"/pictures/media:out/pictures/media \
+        "$rShared"/pictures/promo:out/pictures/promo \
+        "$rShared"/pictures/vendor:out/pictures/vendor
+
+    echo -e "\e[92mcreate links: \e[44m local assets \e[0m"
+    publicLinks \
+        "$rLocal"/cache-data:tmp \
+        "$rLocal"/cache-img:out/pictures/generated \
+        "$rLocal"/log:log
+
+    echo -e "\e[92mcreate links: \e[44m local '$shop' assets \e[0m"
+    publicLinks \
+        "$rLocal"/"$shop"/cache-data:tmp \
+        "$rLocal"/"$shop"/cache-img:out/pictures/generated \
+        "$rLocal"/"$shop"/log:log
+
+    echo -e "\e[92mcreate links: \e[44m theme '$theme' assets \e[0m"
+    publicLinks \
+        "$rTheme"/bg:out/"$theme"/bg \
+        "$rTheme"/css:out/"$theme"/src/css \
+        "$rTheme"/fonts:out/"$theme"/src/fonts \
+        "$rTheme"/img:out/"$theme"/img \
+        "$rTheme"/js:out/"$theme"/src/js \
+        "$rTheme"/theme.jpg:out/"$theme"/theme.jpg
+
     return 0;
 }
 
