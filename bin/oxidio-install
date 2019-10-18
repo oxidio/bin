@@ -5,7 +5,7 @@
 function main() {
     local base=${PWD}
     [[ -f "$base"/.env ]] && . "$base"/.env
-    [[ -x ${base}/vendor/bin/oxidio-install ]] || composer install --no-plugins --no-scripts "$@"
+    [[ -x ${base}/vendor/bin/oxidio-install ]] || composer install --no-plugins --no-scripts --no-suggest "$@"
     rm -rf "$base/source" "$base/var"
 
     composer install "$@"
