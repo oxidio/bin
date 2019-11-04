@@ -7,8 +7,8 @@ function main() {
     [[ -f "$base"/.env ]] && . "$base"/.env
     [[ -z ${SHOP_DEBUG} ]] || args=(--env "DOCKER_XAMPP_BIN_ENV=dev")
 
-	local up=${PWD}/vendor/bin/xampp-up
-	[[ -x ${up} ]] || up=xampp-up
+    local up=${PWD}/vendor/bin/xampp-up
+    [[ -x ${up} ]] || up=xampp-up
     $up --env WEB_DOCUMENT_ROOT="/app/source" "${args[@]}" "$@"
     return 0;
 }
