@@ -9,7 +9,7 @@ function main() {
 
     local up=${PWD}/vendor/bin/xampp-up
     [[ -x ${up} ]] || up=xampp-up
-    $up --env WEB_DOCUMENT_ROOT="/app/source" "${args[@]}" "$@"
+    $up "$@" --env WEB_DOCUMENT_ROOT="/app/source" "${args[@]}"
     return 0;
 }
 

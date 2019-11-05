@@ -3,26 +3,26 @@
 
 function main() {
     local base=${PWD} pass
-    [[ -f ${base}/.env ]] && . ${base}/.env
+    [[ -f ${base}/.env ]] && . "$base"/.env
     [[ -z ${DB_PASSWORD} ]] || pass="-p${DB_PASSWORD}"
 
 
-    [[ -z $(mysql -h${DB_HOST} -u${DB_USER} ${pass} --skip-column-names -e "SHOW DATABASES LIKE '${DB_NAME}'") ]] && {
-        echo -ne "creating database \`${DB_NAME}\` ..."
-        mysql -h${DB_HOST} -u${DB_USER} ${pass} -e "CREATE DATABASE IF NOT EXISTS \`${DB_NAME}\`"
+    [[ -z $(mysql -h"$DB_HOST" -u"$DB_USER" "$pass" --skip-column-names -e "SHOW DATABASES LIKE '$DB_NAME'") ]] && {
+        echo -ne "creating database \`$DB_NAME\` ..."
+        mysql -h"$DB_HOST" -u"$DB_USER" "$pass" -e "CREATE DATABASE IF NOT EXISTS \`$DB_NAME\`"
         echo "done"
     }
 
 	[[ -z $1 ]] || {
-        echo -ne "importing data to \`${DB_NAME}\` ..."
-        cat $@ | mysql -BA -h${DB_HOST} -u${DB_USER} ${pass} ${DB_NAME}
+        echo -ne "importing data to \`$DB_NAME\` ..."
+        cat "$@" | mysql -BA -h"$DB_HOST" -u"$DB_USER" "$pass" "$DB_NAME"
         echo "done"
 	}
 
     [[ -z $1 ]] && {
-        mysql -h${DB_HOST} -u${DB_USER} ${pass} ${DB_NAME}
+        mysql -h"$DB_HOST" -u"$DB_USER" "$pass" "$DB_NAME"
     }
     return 0;
 }
 
-main $@
+main "$@"

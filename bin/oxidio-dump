@@ -3,14 +3,16 @@
 
 function main() {
     local base=${PWD}
-    [[ -f ${base}/.env ]] && . ${base}/.env
+    [[ -f ${base}/.env ]] && . "${base}"/.env
 
-	local like=${1-%}; shift
-	local dst=${1-${base}/resources/db/${DB_NAME}}; shift
+    local like=${1-%}
+    shift
+    local dst=${1-${base}/resources/db/$DB_NAME}
+    shift
 
-	mkdir -p ${dst}
-    local table
-    local sql=$(cat << EOT
+    mkdir -p "${dst}"
+    local table sql
+    sql=$(cat <<EOT
 	SELECT DISTINCT TABLE_NAME
 	FROM INFORMATION_SCHEMA.TABLES
 	WHERE
@@ -18,14 +20,13 @@ function main() {
 		TABLE_SCHEMA=database() AND
 		TABLE_NAME LIKE '${like}'
 EOT
-)
+    )
 
-    for table in $(2>/dev/null mysql -NBA -h${DB_HOST} -u${DB_USER} -p${DB_PASSWORD} -D ${DB_NAME} -e "$sql")
-    do
-        echo "DUMPING TABLE: ${DB_NAME}.${table} to ${dst}/${table}.sql"
-        2>/dev/null mysqldump $@ -h${DB_HOST} -u${DB_USER} -p${DB_PASSWORD} ${DB_NAME} ${table} > ${dst}/${table}.sql
+    for table in $(mysql 2>/dev/null -NBA -h"$DB_HOST" -u"$DB_USER" -p"$DB_PASSWORD" -D "$DB_NAME" -e "$sql"); do
+        echo "DUMPING TABLE: $DB_NAME.$table to ${dst}/$table.sql"
+        mysqldump 2>/dev/null "$@" -h"$DB_HOST" -u"$DB_USER" -p"$DB_PASSWORD" "$DB_NAME" "$table" > "$dst/$table".sql
     done
 
-    return 0;
+    return 0
 }
-main $@
+main "$@"
