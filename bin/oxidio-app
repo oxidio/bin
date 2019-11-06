@@ -1,0 +1,16 @@
+#!/usr/bin/env bash
+# Copyright (C) oxidio. See LICENSE file for license details.
+# shellcheck source=.
+
+function main() {
+    [[ -f .env ]] && . .env
+
+    local up=vendor/bin/xampp-app
+
+    [[ -x "$up" ]] || up=resources/vendor/docker-xampp-bin/bin/xampp-app
+    [[ -x "$up" ]] || up=xampp-app
+
+    $up "$@" --env WEB_DOCUMENT_ROOT="/app/source"
+}
+
+main "$@"
