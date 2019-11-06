@@ -7,11 +7,11 @@
     "docker-xampp/bin": "^1"
   },
   "bin": [
+    "bin/oxidio-app",
     "bin/oxidio-db",
     "bin/oxidio-dump",
     "bin/oxidio-env",
-    "bin/oxidio-install",
-    "bin/oxidio-up"
+    "bin/oxidio-install"
   ],
   "minimum-stability": "dev",
   "extra": {
