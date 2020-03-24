@@ -5,10 +5,51 @@
 function main() {
     local base=${PWD}
     [[ -f "$base"/.env ]] && . "$base"/.env
-    [[ -x ${base}/vendor/bin/oxidio-install ]] || composer install --no-plugins --no-scripts --no-suggest "$@"
+
+    local i env=prod update args='--no-dev --prefer-dist --no-suggest'
+    for i in "$@"
+    do
+    case $i in
+        @*)
+        env="${i#*@}"
+        shift
+        ;;
+
+        --update)
+        update=YES
+        shift
+        ;;
+
+        *)
+        ;;
+    esac
+    done
+
+    export COMPOSER_ALLOW_XDEBUG=0
+    export COMPOSER_MEMORY_LIMIT=-1
+
+    rm -fr dev-vendor dev-vendor.json
+    mkdir dev-vendor
+
+    [[ -n $update ]] && {
+        mv --backup=t vendor composer.lock dev-vendor.lock /tmp  2>/dev/null
+    }
+
+    if [[ $env != 'prod' ]]; then
+        echo -e "\e[92m@dev\e[0m"
+        ln -rs resources/vendor/* dev-vendor 2>/dev/null
+        export COMPOSER='dev-vendor.json'
+        ln -s composer.json $COMPOSER 2>/dev/null
+        args='--no-suggest'
+    else
+        echo -e "\e[92m@prod\e[0m"
+    fi
+
+    [[ -x ${base}/vendor/bin/oxidio-install ]] || composer install --no-plugins --no-scripts $args "$@"
     rm -rf "$base/source" "$base/var"
 
-    composer install "$@"
+    composer install $args "$@"
+    rm -f dev-vendor/* dev-vendor.json
 
     cat <<EOF > "$base/source/config.inc.php"
 <?php
