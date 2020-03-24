@@ -6,7 +6,7 @@ function main() {
     local base=${PWD}
     [[ -f "$base"/.env ]] && . "$base"/.env
 
-    local i env=prod update args='--no-dev --prefer-dist --no-suggest'
+    local i env=prod update args
     for i in "$@"
     do
     case $i in
@@ -42,6 +42,7 @@ function main() {
         ln -s composer.json $COMPOSER 2>/dev/null
         args='--no-suggest'
     else
+        args='--no-dev --prefer-dist --no-suggest'
         echo -e "\e[92m@prod\e[0m"
     fi
 
