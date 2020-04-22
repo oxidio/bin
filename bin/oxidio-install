@@ -47,7 +47,7 @@ function main() {
     fi
 
     [[ -x ${base}/vendor/bin/oxidio-install ]] || composer install --no-plugins --no-scripts $args "$@"
-    rm -rf "$base/source" "$base/var"
+    rm -rf "$base/source"
 
     composer install $args "$@"
     rm -f dev-vendor/* dev-vendor.json
