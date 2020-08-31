@@ -3,124 +3,124 @@
 # shellcheck source=.
 
 function main() {
-    local base=${PWD}
-    [[ -f "$base"/.env ]] && . "$base"/.env
+    # https://stackoverflow.com/a/246128/3263617
+    local dir source base=$PWD
+    source="${BASH_SOURCE[0]}"
+    while [ -h "$source" ]; do # resolve $source until the file is no longer a symlink
+        dir="$(cd -P "$(dirname "$source")" >/dev/null 2>&1 && pwd)"
+        source="$(readlink "$source")"
+        # if $source was a relative symlink, we need to resolve it relative to the path where the symlink file was located
+        [[ $source != /* ]] && source="$dir/$source"
+    done
+    dir="$(cd -P "$(dirname "$source")" >/dev/null 2>&1 && pwd)"
 
-    local i env=prod update args
-    for i in "$@"
-    do
-    case $i in
+    . "$dir/../src/functions.sh"
+
+    [[ -f "$base/.env" ]] && . "$base/.env"
+
+    local i postUpdate updateCache updateShop replace positional
+    local args='--no-suggest' env=prod links=YES conf=YES action=install autoload=dump-autoload
+    for i in "$@"; do
+        case $i in
         @*)
-        env="${i#*@}"
-        shift
-        ;;
+            env="${i#*@}"
+            shift
+            ;;
 
-        --update)
-        update=YES
-        shift
-        ;;
+        --no-links)
+            links=
+            shift
+            ;;
+
+        --no-conf)
+            conf=
+            shift
+            ;;
+
+        --no-install)
+            action=
+            shift
+            ;;
+
+        --update-shop)
+            updateShop=YES
+            shift
+            ;;
+
+        --update-cache)
+            updateCache=YES
+            shift
+            ;;
+
+        --plugins)
+            postUpdate=YES
+            shift
+            ;;
+
+        update)
+            action=update
+            shift
+            ;;
+
+        --no-autoload)
+            autoload=
+            shift
+            ;;
+
+        replace)
+            replace=YES
+            shift
+            ;;
 
         *)
-        ;;
-    esac
+            positional+=("$1")
+            shift
+            ;;
+        esac
     done
+    set -- "${positional[@]}"
 
     export COMPOSER_ALLOW_XDEBUG=0
     export COMPOSER_MEMORY_LIMIT=-1
 
-    rm -fr dev-vendor dev-vendor.json
-    mkdir dev-vendor
-
-    [[ -n $update ]] && {
-        mv --backup=t vendor composer.lock dev-vendor.lock /tmp  2>/dev/null
+    [[ -x ${base}/vendor/bin/oxidio-install ]] || {
+        postUpdate=YES
+        autoload=dump-autoload
     }
 
     if [[ $env != 'prod' ]]; then
-        echo -e "\e[92m@dev\e[0m"
-        ln -rs resources/vendor/* dev-vendor 2>/dev/null
-        export COMPOSER='dev-vendor.json'
-        ln -s composer.json $COMPOSER 2>/dev/null
-        args='--no-suggest'
+      echo -e "\e[92m@dev\e[0m"
     else
-        args='--no-dev --prefer-dist --no-suggest'
-        echo -e "\e[92m@prod\e[0m"
+      echo -e "\e[92m@prod\e[0m"
+      args+=' --no-dev --prefer-dist'
+      [[ -n "$autoload" ]] && autoload+=" --optimize --classmap-authoritative"
     fi
 
-    [[ -x ${base}/vendor/bin/oxidio-install ]] || composer install --no-plugins --no-scripts $args "$@"
-    rm -rf "$base/source"
+    [[ -n "$action" ]] && {
+        [[ -n "$updateShop" ]] && oxidioBackup "$base/source"
+        composer $action --no-plugins --no-scripts $args
+        [[ -n "$postUpdate" ]] && composer run-script post-update-cmd
+        [[ -n "$autoload" ]] && composer $autoload
+    }
 
-    composer install $args "$@"
-    rm -f dev-vendor/* dev-vendor.json
+    [[ -n "$updateCache" ]] && {
+        oxidioBackup "$base/source/tmp/smarty/"
+        oxidioBackup "$base/source/tmp/container_cache.php"
+    }
 
-    cat <<EOF > "$base/source/config.inc.php"
-<?php
-/**
- * Copyright (C) oxidio. See LICENSE file for license details.
- */
+    [[ -n "$replace" ]] && {
+        composerReplace "$@"
+    }
 
-call_user_func(function () {
-    require __DIR__ . '/../vendor/autoload.php';
-    require __DIR__ . '/config.inc.php.dist';
-    /** @var OxidEsales\EshopCommunity\Core\Config|BootstrapConfigFileReader \$this */
-    class_exists(Oxidio\Bootstrap::class) && Oxidio\Bootstrap::bootstrap(\$this);
-});
+    [[ -n "$links" ]] && {
+        oxidioCreateSourceLinks
+    }
 
-EOF
-    [[ -z ${DB_STATE} ]] || chmod 444 "$base"/source/config.inc.php
-    [[ -z ${DB_STATE} ]] || rm -rf "$base/source/Setup"
-
-    local shop=${SHOP_URL##http*/}
-    local theme=${SHOP_THEME:-flow}
-    local rShared=${SHOP_RESOURCES_SHARED:-resources/shared}
-    local rLocal=${SHOP_RESOURCES_LOCAL:-resources/local}
-    local rTheme=${SHOP_RESOURCES_THEME:-resources/shared/theme}
-
-    echo -e "\e[92mcreate links: \e[44m shared assets \e[0m"
-    publicLinks \
-        "$rShared"/downloads:out/downloads \
-        "$rShared"/pictures/master:out/pictures/master \
-        "$rShared"/pictures/media:out/pictures/media \
-        "$rShared"/pictures/promo:out/pictures/promo \
-        "$rShared"/pictures/vendor:out/pictures/vendor
-
-    echo -e "\e[92mcreate links: \e[44m local assets \e[0m"
-    publicLinks \
-        "$rLocal"/cache-data:tmp \
-        "$rLocal"/cache-img:out/pictures/generated \
-        "$rLocal"/log:log
-
-    echo -e "\e[92mcreate links: \e[44m local '$shop' assets \e[0m"
-    publicLinks \
-        "$rLocal"/"$shop"/cache-data:tmp \
-        "$rLocal"/"$shop"/cache-img:out/pictures/generated \
-        "$rLocal"/"$shop"/log:log
-
-    echo -e "\e[92mcreate links: \e[44m theme '$theme' assets \e[0m"
-    publicLinks \
-        "$rTheme"/bg:out/"$theme"/bg \
-        "$rTheme"/css:out/"$theme"/src/css \
-        "$rTheme"/fonts:out/"$theme"/src/fonts \
-        "$rTheme"/img:out/"$theme"/img \
-        "$rTheme"/js:out/"$theme"/src/js \
-        "$rTheme"/theme.jpg:out/"$theme"/theme.jpg
-
-    return 0;
-}
-
-function publicLinks() {
-    local line dst link rel base=${PWD}
-    for line in "$@"; do
-        link=$(echo "$line"| cut -d: -f 1)
-        dst=$(echo "$line"| cut -d: -f 2)
-        if [[ -e ${base}/${link} ]]; then
-            rel=${dst//[^\/]}
-            rel=$(printf '../%.0s' $(seq 0 ${#rel}))
-            mkdir -p "$base/source/$dst" 2>/dev/null
-            rm -rf "$base/source/$dst"
-            ln -sf "$rel$link" "$base/source/$dst"
-            echo "$base/source/$dst  ->  $rel$link"
-        fi
-    done
+    [[ -n "$conf" ]] && {
+        oxidioCreateConfigIncPhp
+        [[ -z ${DB_STATE} ]] || chmod 444 "$base"/source/config.inc.php
+        [[ -z ${DB_STATE} ]] || rm -rf "$base/source/Setup"
+    }
 }
 
 main "$@"
