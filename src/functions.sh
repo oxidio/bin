@@ -1,51 +1,88 @@
-#!/usr/bin/env bash
 # Copyright (C) oxidio. See LICENSE file for license details.
 # shellcheck source=.
 
-function composerReplace() {
-    local i rollback positional file path package packages dir=${PWD}
+function composerEnv() {
+    local i dst env=dev project force package name
 
     for i in "$@"
     do
     case $i in
-        --rollback)
-        rollback=YES
-        shift
+        --dst=*)
+            dst="${i#*=}"
+            shift
         ;;
-
-        *)
-        positional+=("$1")
-        shift
+        --env=*)
+            env="${i#*=}"
+            shift
+        ;;
+        --project=*)
+            project="${i#*=}"
+            shift
+        ;;
+        --force)
+            force=YES
+            shift
         ;;
     esac
     done
-    set -- "${positional[@]}"
 
-    path=$(realpath "composer.json" 2>/dev/null)
-
-    [[ -n "$rollback" ]] || {
-        dir=$(mktemp -d /tmp/composer-replace.XXXXX)
-        cp composer.lock "$dir" 2>/dev/null
+    [[ -n "$project" ]] || project=$(composerJsonAttr --delimiter="" "$PWD")
+    [[ -n "$dst" ]] || dst=$(composer config -g data-dir)/env/$project/$env
+    [[ -f "$dst/composer.json" ]] || force=YES
+    [[ -n "$force" ]] && {
+        rm -rf "$dst"
+        mkdir -p "$dst/packages" 2>/dev/null
         php <<EOF
             <?php
-            \$json = json_decode(file_get_contents('$path'), JSON_OBJECT_AS_ARRAY);
-            \$json['repositories'][] = ['type' => 'path', 'url' => '$dir/*'];
-            file_put_contents('$dir/composer.json', json_encode(\$json, JSON_PRETTY_PRINT));
+            \$json = json_decode(file_get_contents('$PWD/composer.json'), JSON_OBJECT_AS_ARRAY);
+            \$json['repositories'][] = ['type' => 'path', 'url' => '$dst/packages/*'];
+            file_put_contents('$dst/composer.json', json_encode(\$json, JSON_PRETTY_PRINT));
 EOF
+        for i in $(composerJsonAttr "$@"); do
+            package=$(echo "$i"| cut -d: -f 1)
+            ln --backup=t -rs "$package" "$dst/packages" 2>/dev/null
+        done
     }
 
-    for file in "$@"; do
-        path=$(realpath "$file" 2>/dev/null)
-        package=$(php -r "echo json_decode(file_get_contents('$path/composer.json'))->name;")
-        packages+=" $package"
-        oxidioBackup "vendor/$package"
-        [[ -n "$rollback" ]] || {
-            ln --backup=t -rs "$path" "$dir" 2>/dev/null
-        }
+    for i in $(composerJsonAttr "$dst"/packages/*); do
+        name=$(echo "$i"| cut -d: -f 2)
+        mv --backup=t "$PWD/vendor/$name" /tmp  2>/dev/null
     done
 
-    COMPOSER="$dir/composer.json" \
-    composer update --no-plugins --no-scripts --no-suggest "$packages"
+    echo "$dst/composer.json"
+}
+
+function composerJsonAttr() {
+    local i path relative attr=name delimiter=:
+
+    for i in "$@"
+    do
+    case $i in
+        --relative)
+            relative=YES
+            shift
+        ;;
+        --attr=*)
+            attr="${i#*=}"
+            shift
+        ;;
+        --delimiter=*)
+            delimiter="${i#*=}"
+            shift
+        ;;
+    esac
+    done
+
+    for i in "$@"
+    do
+        path=$(realpath "$i" 2>/dev/null)
+        [[ -f "$path/composer.json" ]] && {
+            package=$(php -r "echo json_decode(file_get_contents('$path/composer.json'))->$attr;" 2>/dev/null)
+            [[ -n "$relative" ]] && path="$i"
+            [[ -n "$delimiter" ]] || path=
+            echo "$path$delimiter$package"
+        }
+    done
 }
 
 function publicLinks() {
