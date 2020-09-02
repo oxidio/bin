@@ -17,7 +17,7 @@ function includeFunctions() {
 }
 
 function main() {
-    local i resetCache reset projectLinks autoload links conf plugins
+    local i resetCache reset projectLinks autoload links conf plugins envArgs
     local base=$PWD args='--no-suggest' env=prod action=install
     [[ -f "$base/.env" ]] && . "$base/.env"
 
@@ -58,6 +58,7 @@ function main() {
         ;;
         update)
             action=update
+            envArgs+=" --update"
             shift
         ;;
         --autoload=*)
@@ -92,7 +93,8 @@ function main() {
 
     local composer=composer.json
     if [[ $env != 'prod' ]]; then
-        composer=$(composerEnv --env="$env" "$@")
+        envArgs+=" --env=$env"
+        composer=$(composerEnv $envArgs "$@")
         echo -e "\e[92m@$env\e[0m -> $composer"
     else
         echo -e "\e[92m@prod\e[0m"

@@ -2,7 +2,7 @@
 # shellcheck source=.
 
 function composerEnv() {
-    local i dst env=dev project force package name
+    local i dst env=dev project force package name update
 
     for i in "$@"
     do
@@ -21,6 +21,10 @@ function composerEnv() {
         ;;
         --force)
             force=YES
+            shift
+        ;;
+        --update)
+            update=YES
             shift
         ;;
     esac
@@ -44,9 +48,10 @@ EOF
         done
     }
 
+    [[ -n "$update" ]] && oxidioBackup "$dst/composer.lock"
     for i in $(composerJsonAttr "$dst"/packages/*); do
         name=$(echo "$i"| cut -d: -f 2)
-        mv --backup=t "$PWD/vendor/$name" /tmp  2>/dev/null
+        oxidioBackup "$PWD/vendor/$name"
     done
 
     echo "$dst/composer.json"
