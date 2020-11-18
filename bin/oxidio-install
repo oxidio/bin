@@ -17,8 +17,8 @@ function includeFunctions() {
 }
 
 function main() {
-    local i resetCache reset projectLinks autoload links conf plugins envArgs
-    local base=$PWD args='--no-suggest' env=prod action=install
+    local i resetCache reset projectLinks autoload links conf plugins
+    local base=$PWD env=prod action=install actionArgs='--no-suggest' composerArgs envArgs
     [[ -f "$base/.env" ]] && . "$base/.env"
 
     # https://stackoverflow.com/a/14203146/3263617
@@ -46,6 +46,10 @@ function main() {
         ;;
         --no-install)
             action=
+            shift
+        ;;
+        --no-interaction)
+            composerArgs+=" --no-interaction"
             shift
         ;;
         --reset)
@@ -98,17 +102,17 @@ function main() {
         echo -e "\e[92m@$env\e[0m -> $composer"
     else
         echo -e "\e[92m@prod\e[0m"
-        args+=' --no-dev --prefer-dist'
+        actionArgs+=' --no-dev --prefer-dist'
         [[ -n "$autoload" ]] && autoload+=" --optimize --classmap-authoritative"
     fi
 
     [[ -n "$action" ]] && {
-        COMPOSER="$composer" composer $action --no-plugins --no-scripts --no-autoloader $args
+        COMPOSER="$composer" composer $action --no-plugins --no-scripts --no-autoloader $actionArgs $composerArgs
     }
 
-    [[ -n "$autoload" ]] && COMPOSER="$composer" composer $autoload
-    [[ -n "$plugins" ]] && COMPOSER="$composer" composer run-script post-install-cmd
-    [[ -n "$plugins" ]] && COMPOSER="$composer" composer run-script post-update-cmd
+    [[ -n "$autoload" ]] && COMPOSER="$composer" composer $autoload $composerArgs
+    [[ -n "$plugins" ]] && COMPOSER="$composer" composer run-script post-install-cmd $composerArgs
+    [[ -n "$plugins" ]] && COMPOSER="$composer" composer run-script post-update-cmd $composerArgs
 
     [[ -n "$resetCache" ]] && {
         oxidioBackup "$base/source/tmp/smarty/"
